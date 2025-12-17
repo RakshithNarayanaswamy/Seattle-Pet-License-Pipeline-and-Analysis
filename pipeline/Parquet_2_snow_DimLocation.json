@@ -1,0 +1,134 @@
+{
+	"name": "Parquet_2_snow_DimLocation",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy data",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:10:00",
+					"retry": 1,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "ParquetSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "ParquetReadSettings"
+						}
+					},
+					"sink": {
+						"type": "SnowflakeV2Sink",
+						"importSettings": {
+							"type": "SnowflakeImportCopyCommand"
+						}
+					},
+					"enableStaging": true,
+					"stagingSettings": {
+						"linkedServiceName": {
+							"referenceName": "ls_storage_sas_auth",
+							"type": "LinkedServiceReference"
+						},
+						"path": "stagedata"
+					},
+					"translator": {
+						"type": "TabularTranslator",
+						"mappings": [
+							{
+								"source": {
+									"name": "STATE_FIPS",
+									"type": "String"
+								},
+								"sink": {
+									"name": "STATE_FIPS",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "STATE",
+									"type": "String"
+								},
+								"sink": {
+									"name": "STATE_NAME",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "STATE_ABBR",
+									"type": "String"
+								},
+								"sink": {
+									"name": "STATE_ABBR",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "ZIP_CODE",
+									"type": "String"
+								},
+								"sink": {
+									"name": "ZIP_CODE",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "COUNTRY",
+									"type": "String"
+								},
+								"sink": {
+									"name": "COUNTY_NAME",
+									"type": "String"
+								}
+							},
+							{
+								"source": {
+									"name": "CITY",
+									"type": "String"
+								},
+								"sink": {
+									"name": "CITY_NAME",
+									"type": "String"
+								}
+							}
+						]
+					}
+				},
+				"inputs": [
+					{
+						"referenceName": "Parquet_ds",
+						"type": "DatasetReference",
+						"parameters": {
+							"container_name": "stagedata",
+							"folder_name": "stagedata",
+							"file_name": "geo-data.parquet"
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "Snow_Stage_DS",
+						"type": "DatasetReference",
+						"parameters": {
+							"schema_name": "STAGE",
+							"table_name": "DIM_LOCATION"
+						}
+					}
+				]
+			}
+		],
+		"annotations": []
+	}
+}

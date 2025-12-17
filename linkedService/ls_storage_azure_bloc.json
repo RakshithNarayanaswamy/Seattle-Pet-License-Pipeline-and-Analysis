@@ -1,0 +1,11 @@
+{
+	"name": "ls_storage_azure_bloc",
+	"properties": {
+		"annotations": [],
+		"type": "AzureBlobStorage",
+		"typeProperties": {
+			"serviceEndpoint": "https://seattlepet.blob.core.windows.net/",
+			"accountKind": "StorageV2"
+		}
+	}
+}

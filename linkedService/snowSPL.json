@@ -1,0 +1,25 @@
+{
+	"name": "snowSPL",
+	"properties": {
+		"annotations": [],
+		"type": "SnowflakeV2",
+		"typeProperties": {
+			"authenticationType": "Basic",
+			"accountIdentifier": "VKWSSIM-FBA73607",
+			"user": "PET_USER",
+			"database": "PET_DB",
+			"warehouse": "PET_WH",
+			"role": "PET_ROLE",
+			"host": "VKWSSIM-FBA73607.snowflakecomputing.com",
+			"password": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "AzureKeyVault1",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "snowPet"
+			}
+		},
+		"version": "1.1"
+	}
+}

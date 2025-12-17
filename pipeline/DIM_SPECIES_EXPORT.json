@@ -1,0 +1,42 @@
+{
+	"name": "DIM_SPECIES_EXPORT",
+	"properties": {
+		"activities": [
+			{
+				"name": "DF_DIM_SPECIES",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:10:00",
+					"retry": 2,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "DF_DIM_SPECIES",
+						"type": "DataFlowReference",
+						"datasetParameters": {
+							"sourcePetLicensePrimary": {
+								"schema_name": "STAGE",
+								"table_name": "PET_LICENSE"
+							},
+							"sinkDimSpecies": {
+								"schema_name": "SCHEMA",
+								"table_name": "DIM_SPECIES"
+							}
+						}
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			}
+		],
+		"annotations": []
+	}
+}

@@ -1,0 +1,42 @@
+{
+	"name": "LocationKey_export",
+	"properties": {
+		"activities": [
+			{
+				"name": "Location_Key_creation",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:10:00",
+					"retry": 1,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "Location_Key_creation",
+						"type": "DataFlowReference",
+						"datasetParameters": {
+							"sourceLocation": {
+								"schema_name": "STAGE",
+								"table_name": "DIM_LOCATION"
+							},
+							"sinkLocationDIM": {
+								"schema_name": "SCHEMA",
+								"table_name": "DIM_LOCATION"
+							}
+						}
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			}
+		],
+		"annotations": []
+	}
+}

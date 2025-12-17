@@ -1,0 +1,190 @@
+{
+	"name": "DP_FACT_PET_LICENSE",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Snow_Stage_DS",
+						"type": "DatasetReference"
+					},
+					"name": "sourceSPL"
+				},
+				{
+					"dataset": {
+						"referenceName": "Snow_Stage_DS",
+						"type": "DatasetReference"
+					},
+					"name": "sourceLocation"
+				},
+				{
+					"dataset": {
+						"referenceName": "Snow_Stage_DS",
+						"type": "DatasetReference"
+					},
+					"name": "sourceDate"
+				},
+				{
+					"dataset": {
+						"referenceName": "Snow_Stage_DS",
+						"type": "DatasetReference"
+					},
+					"name": "sourceBreed"
+				},
+				{
+					"dataset": {
+						"referenceName": "Snow_Stage_DS",
+						"type": "DatasetReference"
+					},
+					"name": "sourceSpecies"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Snow_Stage_DS",
+						"type": "DatasetReference"
+					},
+					"name": "sinkFact"
+				}
+			],
+			"transformations": [
+				{
+					"name": "CleanPrep"
+				},
+				{
+					"name": "DateKeyClean"
+				},
+				{
+					"name": "joinBreed"
+				},
+				{
+					"name": "lkpSpecies"
+				},
+				{
+					"name": "FactKeyGen"
+				},
+				{
+					"name": "SelectColumns"
+				},
+				{
+					"name": "LkpDate"
+				},
+				{
+					"name": "JoinLoc"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          LICENSE_ISSUE_DATE as string,",
+				"          LICENSE_NUMBER as string,",
+				"          ANIMAL_NAME as string,",
+				"          SPECIES as string,",
+				"          PRIMARY_BREED as string,",
+				"          SECONDARY_BREED as string,",
+				"          ZIP_CODE as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table') ~> sourceSPL",
+				"source(output(",
+				"          STATE_FIPS as string,",
+				"          STATE_NAME as string,",
+				"          STATE_ABBR as string,",
+				"          ZIP_CODE as string,",
+				"          COUNTY_NAME as string,",
+				"          CITY_NAME as string,",
+				"          LOCATION_KEY as decimal(38,0)",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table') ~> sourceLocation",
+				"source(output(",
+				"          DATE_KEY as decimal(38,0),",
+				"          FULL_DATE as date,",
+				"          YEAR as decimal(38,0),",
+				"          QUARTER as decimal(38,0),",
+				"          MONTH as decimal(38,0),",
+				"          MONTH_NAME as string,",
+				"          DAY as decimal(38,0),",
+				"          DAY_NAME as string,",
+				"          IS_WEEKEND as boolean",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table') ~> sourceDate",
+				"source(output(",
+				"          BREED_KEY as decimal(38,0),",
+				"          SPECIES_KEY as decimal(38,0),",
+				"          PRIMARY_BREED_NAME as string,",
+				"          SECONDARY_BREED_NAME as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table') ~> sourceBreed",
+				"source(output(",
+				"          SPECIES_KEY as decimal(38,0),",
+				"          SPECIES_NAME as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table') ~> sourceSpecies",
+				"sourceSPL derive(full_date = toDate(toTimestamp(trim(LICENSE_ISSUE_DATE), 'MMMM d, yyyy')),",
+				"          species_clean = upper(trim(SPECIES)),",
+				"          breed_clean = iif(!isNull(PRIMARY_BREED) && trim(PRIMARY_BREED)!='', upper(trim(PRIMARY_BREED)), upper(trim(SECONDARY_BREED)))) ~> CleanPrep",
+				"CleanPrep derive(date_key = (year(full_date) * 10000) + (month(full_date) * 100) + dayOfMonth(full_date)) ~> DateKeyClean",
+				"lkpSpecies, sourceBreed join(sourceSpecies@SPECIES_KEY == sourceBreed@SPECIES_KEY",
+				"     && PRIMARY_BREED == PRIMARY_BREED_NAME",
+				"     && SECONDARY_BREED == SECONDARY_BREED_NAME,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> joinBreed",
+				"LkpDate, sourceSpecies lookup(species_clean == SPECIES_NAME,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> lkpSpecies",
+				"SelectColumns keyGenerate(output({GENERATED KEY} as long),",
+				"     startAt: 1L,",
+				"     stepValue: 1L) ~> FactKeyGen",
+				"JoinLoc select(mapColumn(",
+				"          LICENSE_NUMBER,",
+				"          PET_NAME = ANIMAL_NAME,",
+				"          DATE_KEY = sourceDate@DATE_KEY,",
+				"          LOCATION_KEY,",
+				"          BREED_KEY",
+				"     ),",
+				"     skipDuplicateMapInputs: false,",
+				"     skipDuplicateMapOutputs: false) ~> SelectColumns",
+				"DateKeyClean, sourceDate lookup(DateKeyClean@date_key == sourceDate@DATE_KEY,",
+				"     multiple: false,",
+				"     pickup: 'any',",
+				"     broadcast: 'auto')~> LkpDate",
+				"joinBreed, sourceLocation join(sourceSPL@ZIP_CODE == sourceLocation@ZIP_CODE,",
+				"     joinType:'left',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> JoinLoc",
+				"FactKeyGen sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:false,",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     stageInsert: true,",
+				"     mapColumn(",
+				"          LICENSE_NUMBER,",
+				"          PET_NAME,",
+				"          DATE_KEY,",
+				"          LOCATION_KEY,",
+				"          BREED_KEY,",
+				"          FACT_KEY = {GENERATED KEY}",
+				"     )) ~> sinkFact"
+			]
+		}
+	}
+}

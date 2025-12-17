@@ -1,0 +1,80 @@
+{
+	"name": "DF_DIM_SPECIES",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Snow_Stage_DS",
+						"type": "DatasetReference"
+					},
+					"name": "sourcePetLicensePrimary"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Snow_Stage_DS",
+						"type": "DatasetReference"
+					},
+					"name": "sinkDimSpecies"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Clean"
+				},
+				{
+					"name": "RowChanges"
+				},
+				{
+					"name": "filterClean"
+				},
+				{
+					"name": "DistinctSpecies"
+				},
+				{
+					"name": "surrogateKey1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          LICENSE_ISSUE_DATE as string,",
+				"          LICENSE_NUMBER as string,",
+				"          ANIMAL_NAME as string,",
+				"          SPECIES as string,",
+				"          PRIMARY_BREED as string,",
+				"          SECONDARY_BREED as string,",
+				"          ZIP_CODE as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table') ~> sourcePetLicensePrimary",
+				"sourcePetLicensePrimary derive(species_clean = upper(trim(SPECIES))) ~> Clean",
+				"surrogateKey1 alterRow(upsertIf(isInsert()||isUpdate())) ~> RowChanges",
+				"Clean filter(!isNull(species_clean) && trim(species_clean) != '') ~> filterClean",
+				"filterClean aggregate(groupBy(species_clean),",
+				"     row_count = count(1)) ~> DistinctSpecies",
+				"DistinctSpecies keyGenerate(output(GENERATED_KEY as long),",
+				"     startAt: 1L,",
+				"     stepValue: 1L) ~> surrogateKey1",
+				"RowChanges sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:true,",
+				"     keys:['SPECIES_NAME'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     stageInsert: true,",
+				"     mapColumn(",
+				"          SPECIES_NAME = species_clean,",
+				"          SPECIES_KEY = GENERATED_KEY",
+				"     )) ~> sinkDimSpecies"
+			]
+		}
+	}
+}

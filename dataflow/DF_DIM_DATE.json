@@ -1,0 +1,97 @@
+{
+	"name": "DF_DIM_DATE",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "Snow_Stage_DS",
+						"type": "DatasetReference"
+					},
+					"name": "sourcePetLicense"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Snow_Stage_DS",
+						"type": "DatasetReference"
+					},
+					"name": "DateDim"
+				}
+			],
+			"transformations": [
+				{
+					"name": "DerivedMonth"
+				},
+				{
+					"name": "DerivedDate"
+				},
+				{
+					"name": "RowChanges"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          LICENSE_ISSUE_DATE as string,",
+				"          LICENSE_NUMBER as string,",
+				"          ANIMAL_NAME as string,",
+				"          SPECIES as string,",
+				"          PRIMARY_BREED as string,",
+				"          SECONDARY_BREED as string,",
+				"          ZIP_CODE as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'table') ~> sourcePetLicense",
+				"sourcePetLicense derive(full_date = toDate(toTimestamp(trim(LICENSE_ISSUE_DATE), 'MMMM d, yyyy'))) ~> DerivedMonth",
+				"DerivedMonth derive(date_key = (year(full_date) * 10000) + (month(full_date) * 100) + dayOfMonth(full_date),",
+				"          year = year(full_date),",
+				"          quarter = toInteger(ceil(month(full_date) / 3.0)),",
+				"          month = month(full_date),",
+				"          month_name = case(",
+				"  month(full_date) == 1,  'January',",
+				"  month(full_date) == 2,  'February',",
+				"  month(full_date) == 3,  'March',",
+				"  month(full_date) == 4,  'April',",
+				"  month(full_date) == 5,  'May',",
+				"  month(full_date) == 6,  'June',",
+				"  month(full_date) == 7,  'July',",
+				"  month(full_date) == 8,  'August',",
+				"  month(full_date) == 9,  'September',",
+				"  month(full_date) == 10, 'October',",
+				"  month(full_date) == 11, 'November',",
+				"  month(full_date) == 12, 'December',",
+				"  'Unknown'",
+				"),",
+				"          day = dayOfMonth(full_date),",
+				"          day_name = case(   dayOfWeek(full_date) == 0, 'Sunday',   dayOfWeek(full_date) == 1, 'Monday',   dayOfWeek(full_date) == 2, 'Tuesday',   dayOfWeek(full_date) == 3, 'Wednesday',   dayOfWeek(full_date) == 4, 'Thursday',   dayOfWeek(full_date) == 5, 'Friday',   dayOfWeek(full_date) == 6, 'Saturday',   'Unknown' ),",
+				"          is_weekend = iif(dayOfWeek(full_date) == 0 || dayOfWeek(full_date) == 6, true(), false())) ~> DerivedDate",
+				"DerivedDate alterRow(upsertIf(isInsert() || isUpdate())) ~> RowChanges",
+				"RowChanges sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     deletable:false,",
+				"     insertable:true,",
+				"     updateable:false,",
+				"     upsertable:true,",
+				"     keys:['DATE_KEY'],",
+				"     format: 'table',",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     stageInsert: true,",
+				"     mapColumn(",
+				"          FULL_DATE = full_date,",
+				"          DATE_KEY = date_key,",
+				"          YEAR = year,",
+				"          QUARTER = quarter,",
+				"          MONTH = month,",
+				"          MONTH_NAME = month_name,",
+				"          DAY = day,",
+				"          DAY_NAME = day_name,",
+				"          IS_WEEKEND = is_weekend",
+				"     )) ~> DateDim"
+			]
+		}
+	}
+}

@@ -1,0 +1,42 @@
+{
+	"name": "DIM_DATE_EXPORT",
+	"properties": {
+		"activities": [
+			{
+				"name": "DF_DIM_DATE",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:10:00",
+					"retry": 1,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "DF_DIM_DATE",
+						"type": "DataFlowReference",
+						"datasetParameters": {
+							"sourcePetLicense": {
+								"schema_name": "STAGE",
+								"table_name": "PET_LICENSE"
+							},
+							"DateDim": {
+								"schema_name": "SCHEMA",
+								"table_name": "DIM_DATE"
+							}
+						}
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			}
+		],
+		"annotations": []
+	}
+}

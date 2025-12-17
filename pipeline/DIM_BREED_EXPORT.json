@@ -1,0 +1,46 @@
+{
+	"name": "DIM_BREED_EXPORT",
+	"properties": {
+		"activities": [
+			{
+				"name": "DF_DIM_BREED",
+				"type": "ExecuteDataFlow",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:10:00",
+					"retry": 1,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataflow": {
+						"referenceName": "DF_DIM_BREED",
+						"type": "DataFlowReference",
+						"datasetParameters": {
+							"sourceSPL": {
+								"schema_name": "STAGE",
+								"table_name": "PET_LICENSE"
+							},
+							"sourceSpecies": {
+								"schema_name": "SCHEMA",
+								"table_name": "DIM_SPECIES"
+							},
+							"sinkDimBreed": {
+								"schema_name": "SCHEMA",
+								"table_name": "DIM_BREED"
+							}
+						}
+					},
+					"compute": {
+						"coreCount": 8,
+						"computeType": "General"
+					},
+					"traceLevel": "Fine"
+				}
+			}
+		],
+		"annotations": []
+	}
+}
